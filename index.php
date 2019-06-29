@@ -5,3 +5,4 @@ $dubRss = new Rss($_GET['mode']);
 $dubRss->filterNews();
 $dubRss->printRss();
 
+

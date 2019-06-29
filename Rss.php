@@ -29,7 +29,8 @@ class Rss
                     $this->entries[$element->href]['heading'] = $el->xmltext;
                 }
                 if( $el->nodeName() === 'time') {
-                    $this->entries[$element->href]['date'] = $el->datetime;
+                    $date = new DateTime($el->datetime . ' '. substr($el->xmltext, -5).':00');
+                    $this->entries[$element->href]['date'] = $date->format(DateTime::RFC822);
                 }
                 if( $el->nodeName() === 'img') {
                     $this->entries[$element->href]['img'] = 'http://www.dubossary.ru/'.$el->src;
@@ -41,7 +42,7 @@ class Rss
             $prevtextStart = strpos($element->xmltext, 'class="foto">')+13;
             $this->entries[$element->href]['description'] = substr($element->xmltext, $prevtextStart);
 
-            if( $this->mode === 'fulltext' ) {
+            if( $this->mode === 'full' ) {
                 $this->entries[$element->href]['content'] = $this->getFulltext($this->entries[$element->href]['url'] );
             }
 
@@ -78,25 +79,36 @@ class Rss
     public function createRss()
     {
         header("Content-Type: application/rss+xml; charset=utf-8");
+
+        $pathAddition = ( $this->mode === 'full' ) ? '?mode=full' : '';
+
         $this->rss =
-            '<?xml version="1.0" encoding="utf-8"?>
-                <rss version="2.0">
+            '<?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0"
+                	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+                    xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+                    xmlns:dc="http://purl.org/dc/elements/1.1/"
+                    xmlns:atom="http://www.w3.org/2005/Atom"
+                    xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+                    xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
                     <channel>
                         <title>Заря Приднестровья</title>
+                        <atom:link href="http://devlab.sega-news.de/pmr/dubossaryrss/'.$pathAddition.'" rel="self" type="application/rss+xml" />
                         <link>https://zpmr.ru/</link>
                         <description>Заря Приднестровья. Дубоссары</description>
                         <language>ru-RU</language>';
 
         foreach($this->entries as $entry) {
-            $content = ( $this->mode === 'fulltext' ) ? '<content>'.$entry['content'].'</content>' : '';
+            $content = ( $this->mode === 'full' ) ? '<content:encoded><![CDATA['.$entry['content'].']]></content:encoded>' : '';
 
             $this->rss .= '
                         <item>
                             <title>'.$entry['heading'].'</title>
-                            <description>'.$entry['description'].'</description>
-                            '.$content.'
+                            <description><![CDATA['.$entry['description'].']]></description>
                             <link>'.$entry['url'].'</link>
                             <pubDate>'.$entry['date'].'</pubDate>
+                            '.$content.'
                          </item>
                          ';
 
