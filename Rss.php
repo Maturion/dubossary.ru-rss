@@ -38,12 +38,16 @@ class Rss
 
             $this->entries[$element->href]['url'] = 'http://www.dubossary.ru/'.$element->href;
 
-            $prevtextStart = strpos($element->xmltext, 'class="foto">')+13;
-            $this->entries[$element->href]['previewtext'] = substr($element->xmltext, $prevtextStart);
 
-            $this->entries[$element->href]['fulltext'] = $this->getFulltext($this->entries[$element->href]['url'] );
+            if( $this->mode === 'fulltext' ) {
+                $this->entries[$element->href]['description'] = $this->getFulltext($this->entries[$element->href]['url'] );
+            }
+            else {
+                $prevtextStart = strpos($element->xmltext, 'class="foto">')+13;
+                $this->entries[$element->href]['description'] = substr($element->xmltext, $prevtextStart);
+            }
+
         }
-        //echo "<pre>";var_dump($this->entries);echo "</pre>";
     }
 
     public function getFulltext($url)
@@ -85,11 +89,11 @@ class Rss
                         <language>ru-RU</language>';
 
         foreach($this->entries as $entry) {
-            $description = ( $this->mode === 'fulltext' ) ? $entry['fulltext'] : $entry['previewtext'];
+
 
             $this->rss .= '    <item>
                             <title>'.$entry['heading'].'</title>
-                            <description>'.$description.'</description>
+                            <description>'.$entry['description'].'</description>
                             <link>'.$entry['url'].'</link>
                             <pubDate>'.$entry['date'].'</pubDate>
                          </item>';
@@ -110,7 +114,3 @@ class Rss
         echo $this->getRss();
     }
 }
-
-$dubRss = new Rss($_GET['mode']);
-$dubRss->filterNews();
-$dubRss->printRss();
